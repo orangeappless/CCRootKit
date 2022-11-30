@@ -2,9 +2,6 @@ import pyinotify
 import os
 
 
-pid = ""
-
-
 class EventProcessor(pyinotify.ProcessEvent):
     _methods = [
         "IN_CREATE",
@@ -36,9 +33,6 @@ def process_generator(cls, method):
 
 
 def start_watchfile(filename):
-    global pid
-    pid = os.getpid()
-
     for _method in EventProcessor._methods:
         process_generator(EventProcessor, _method)
 

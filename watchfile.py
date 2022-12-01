@@ -1,5 +1,4 @@
 import pyinotify
-import os
 
 
 class EventProcessor(pyinotify.ProcessEvent):

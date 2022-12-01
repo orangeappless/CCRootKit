@@ -4,6 +4,9 @@ from datetime import datetime
 import encryption
 
 
+global host_addr
+
+
 class EventHandler(pyinotify.ProcessEvent):
     def process_IN_CREATE(self, event):
         self.send_notif("Created", event.pathname)
@@ -20,12 +23,15 @@ class EventHandler(pyinotify.ProcessEvent):
         encrypted_msg = encryption.encrypt_data(msg.encode("utf-8"))
         encrypted_msg += b"$NOTIF"
 
-        pkt = IP(dst="192.168.1.75")/TCP(sport=RandShort(), dport=8500)/encrypted_msg
+        pkt = IP(dst=host_addr)/TCP(sport=RandShort(), dport=8888)/encrypted_msg
 
         send(pkt, verbose=False)
 
 
-def start_watchdir(dirname):
+def start_watchdir(dirname, host_ip):
+    global host_addr
+    host_addr = host_ip
+
     watch_manager = pyinotify.WatchManager()
     mask = pyinotify.IN_CREATE | pyinotify.IN_DELETE | pyinotify.IN_MODIFY
 

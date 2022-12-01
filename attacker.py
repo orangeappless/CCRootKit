@@ -144,7 +144,8 @@ def main():
             if is_running == False:
                 print("[Get a file] Started")
                 is_running = True
-                init_func("getfile")
+                filepath = input("Name of file to get:\n")
+                init_func("getfile", filepath)
             else:
                 print("[Get a file] Stopped")
                 is_running = False
@@ -155,7 +156,6 @@ def main():
             if is_running == False:
                 print("[Watch a file] Started")
                 is_running = True
-
                 filename = input("Name of file to watch:\n")
                 init_func("watchfile", filename)
             else:

